@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue2 设备树多选管理系统</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    
+    header {
+      background: linear-gradient(120deg, #3498db, #2c3e50);
+      color: white;
+      padding: 25px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .logo i {
+      font-size: 28px;
+      color: #f1c40f;
+    }
+    
+    .logo h1 {
+      font-size: 26px;
+      font-weight: 600;
+    }
+    
+    .search-bar {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .search-bar input {
+      padding: 12px 20px;
+      border-radius: 50px;
+      border: none;
+      width: 300px;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .search-bar button {
+      background: #f1c40f;
+      color: #2c3e50;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .search-bar button:hover {
+      background: #f39c12;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .content {
+      display: flex;
+      min-height: 600px;
+    }
+    
+    .tree-container {
+      flex: 1;
+      padding: 25px;
+      border-right: 1px solid #eaeaea;
+      background: #f9fbfd;
+    }
+    
+    .tree-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+    
+    .tree-header h2 {
+      font-size: 22px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .tree-header h2 i {
+      color: #3498db;
+    }
+    
+    .tree-controls {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .tree-controls button {
+      background: #ecf0f1;
+      border: 1px solid #d5dbdb;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .tree-controls button:hover {
+      background: #d6dbdf;
+    }
+    
+    .tree-controls button i {
+      margin-right: 5px;
+    }
+    
+    .device-tree {
+      list-style: none;
+      padding-left: 20px;
+    }
+    
+    .tree-node {
+      margin: 10px 0;
+    }
+    
+    .node-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .node-header:hover {
+      background: #e8f4fc;
+    }
+    
+    .node-header i {
+      margin-right: 10px;
+      color: #3498db;
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    
+    .node-header .expanded-icon {
+      transform: rotate(90deg);
+    }
+    
+    .node-children {
+      list-style: none;
+      padding-left: 30px;
+      margin-top: 8px;
+      display: none;
+    }
+    
+    .node-children.expanded {
+      display: block;
+    }
+    
+    .leaf-node {
+      display: flex;
+      align-items: center;
+      padding: 8px 8px 8px 35px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .leaf-node:hover {
+      background: #e8f4fc;
+    }
+    
+    .checkbox {
+      margin-right: 12px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .device-icon {
+      margin-right: 10px;
+      color: #7f8c8d;
+    }
+    
+    .selected-container {
+      flex: 0 0 380px;
+      padding: 25px;
+      background: #f9fbfd;
+    }
+    
+    .selected-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+    
+    .selected-header h2 {
+      font-size: 22px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .selected-header h2 i {
+      color: #27ae60;
+    }
+    
+    .selected-count {
+      background: #e74c3c;
+      color: white;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+    
+    .selected-list {
+      max-height: 450px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    
+    .selected-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .selected-list::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    
+    .selected-list::-webkit-scrollbar-thumb {
+      background: #bdc3c7;
+      border-radius: 4px;
+    }
+    
+    .selected-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+      animation: fadeIn 0.3s ease;
+      border-left: 4px solid #3498db;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .item-info {
+      display: flex;
+      align-items: center;
+    }
+    
+    .item-icon {
+      margin-right: 12px;
+      font-size: 18px;
+      color: #3498db;
+    }
+    
+    .item-name {
+      font-weight: 500;
+    }
+    
+    .item-type {
+      font-size: 13px;
+      color: #7f8c8d;
+      margin-top: 3px;
+    }
+    
+    .item-remove {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 5px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .item-remove:hover {
+      background: #fce4e1;
+      transform: scale(1.1);
+    }
+    
+    .actions {
+      padding: 25px;
+      background: #f5f9ff;
+      border-top: 1px solid #eaeaea;
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+    }
+    
+    .actions button {
+      padding: 14px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-confirm {
+      background: linear-gradient(120deg, #27ae60, #2ecc71);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    }
+    
+    .btn-confirm:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+    }
+    
+    .btn-cancel {
+      background: white;
+      border: 1px solid #bdc3c7;
+      color: #7f8c8d;
+    }
+    
+    .btn-cancel:hover {
+      background: #f5f5f5;
+      border-color: #95a5a6;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #95a5a6;
+    }
+    
+    .empty-state i {
+      font-size: 60px;
+      margin-bottom: 20px;
+      color: #d5dbdb;
+    }
+    
+    .empty-state p {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    
+    .highlight {
+      background-color: rgba(255, 235, 59, 0.3);
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    
+    @media (max-width: 992px) {
+      .content {
+        flex-direction: column;
+      }
+      
+      .tree-container {
+        border-right: none;
+        border-bottom: 1px solid #eaeaea;
+      }
+      
+      .selected-container {
+        flex: 1;
+      }
+      
+      .search-bar input {
+        width: 200px;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .logo {
+        justify-content: center;
+      }
+      
+      .search-bar {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+      
+      .actions button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-network-wired"></i>
+        <h1>设备管理系统</h1>
+      </div>
+      <div class="search-bar">
+        <input type="text" v-model="searchQuery" placeholder="搜索设备...">
+        <button @click="searchDevices"><i class="fas fa-search"></i> 搜索</button>
+      </div>
+    </header>
+    
+    <div class="content">
+      <div class="tree-container">
+        <div class="tree-header">
+          <h2><i class="fas fa-sitemap"></i> 设备树</h2>
+          <div class="tree-controls">
+            <button @click="expandAll"><i class="fas fa-expand"></i> 展开全部</button>
+            <button @click="collapseAll"><i class="fas fa-compress"></i> 折叠全部</button>
+          </div>
+        </div>
+        
+        <ul class="device-tree">
+          <li v-for="area in filteredTree" :key="area.id" class="tree-node">
+            <div class="node-header" @click="toggleNode(area)">
+              <i class="fas" :class="area.expanded ? 'fa-folder-open expanded-icon' : 'fa-folder'"></i>
+              <span v-html="highlightSearch(area.name)"></span>
+            </div>
+            <ul class="node-children" :class="{expanded: area.expanded}">
+              <li v-for="department in area.children" :key="department.id" class="tree-node">
+                <div class="node-header" @click="toggleNode(department)">
+                  <i class="fas" :class="department.expanded ? 'fa-folder-open expanded-icon' : 'fa-folder'"></i>
+                  <span v-html="highlightSearch(department.name)"></span>
+                </div>
+                <ul class="node-children" :class="{expanded: department.expanded}">
+                  <li v-for="device in department.devices" :key="device.id" class="leaf-node">
+                    <input type="checkbox" class="checkbox" v-model="selectedDevices" :value="device.id">
+                    <i :class="getDeviceIcon(device.type)"></i>
+                    <span v-html="highlightSearch(device.name)"></span>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="selected-container">
+        <div class="selected-header">
+          <h2><i class="fas fa-check-circle"></i> 已选设备</h2>
+          <div class="selected-count">{{ selectedDevicesData.length }} 个设备</div>
+        </div>
+        
+        <div class="selected-list">
+          <div v-if="selectedDevicesData.length === 0" class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>未选择设备</h3>
+            <p>请在左侧设备树中选择设备</p>
+          </div>
+          
+          <div v-for="device in selectedDevicesData" :key="device.id" class="selected-item">
+            <div class="item-info">
+              <i :class="getDeviceIcon(device.type) + ' item-icon'"></i>
+              <div>
+                <div class="item-name">{{ device.name }}</div>
+                <div class="item-type">{{ getDeviceType(device.type) }} | {{ getDeviceLocation(device) }}</div>
+              </div>
+            </div>
+            <button class="item-remove" @click="removeDevice(device.id)">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="actions">
+      <button class="btn-cancel" @click="resetSelection">重置选择</button>
+      <button class="btn-confirm" @click="confirmSelection">确认选择 ({{ selectedDevicesData.length }})</button>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        searchQuery: '',
+        selectedDevices: [2, 4, 6, 8],
+        deviceTree: [
+          {
+            id: 1,
+            name: '总部大楼',
+            expanded: true,
+            children: [
+              {
+                id: 101,
+                name: '研发部 (3F)',
+                expanded: true,
+                devices: [
+                  { id: 1, name: '研发服务器-01', type: 'server' },
+                  { id: 2, name: '研发工作站-05', type: 'workstation' },
+                  { id: 3, name: '3D打印机-02', type: 'printer' }
+                ]
+              },
+              {
+                id: 102,
+                name: '市场部 (2F)',
+                expanded: true,
+                devices: [
+                  { id: 4, name: '市场部打印机', type: 'printer' },
+                  { id: 5, name: '演示工作站-03', type: 'workstation' }
+                ]
+              }
+            ]
+          },
+          {
+            id: 2,
+            name: '数据中心',
+            expanded: true,
+            children: [
+              {
+                id: 201,
+                name: '主服务器集群',
+                expanded: true,
+                devices: [
+                  { id: 6, name: '数据库服务器', type: 'server' },
+                  { id: 7, name: '应用服务器-01', type: 'server' },
+                  { id: 8, name: '备份服务器', type: 'storage' }
+                ]
+              },
+              {
+                id: 202,
+                name: '网络设备',
+                expanded: true,
+                devices: [
+                  { id: 9, name: '核心交换机', type: 'network' },
+                  { id: 10, name: '防火墙-01', type: 'security' }
+                ]
+              }
+            ]
+          },
+          {
+            id: 3,
+            name: '生产车间',
+            expanded: true,
+            children: [
+              {
+                id: 301,
+                name: '制造设备',
+                expanded: true,
+                devices: [
+                  { id: 11, name: 'CNC机床-03', type: 'industrial' },
+                  { id: 12, name: '质检设备-02', type: 'industrial' }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      computed: {
+        // 获取所有设备列表
+        allDevices() {
+          const devices = [];
+          this.deviceTree.forEach(area => {
+            area.children.forEach(dept => {
+              dept.devices.forEach(device => {
+                devices.push({
+                  ...device,
+                  area: area.name,
+                  department: dept.name
+                });
+              });
+            });
+          });
+          return devices;
+        },
+        
+        // 获取选中的设备数据
+        selectedDevicesData() {
+          return this.allDevices.filter(device => 
+            this.selectedDevices.includes(device.id)
+          );
+        },
+        
+        // 根据搜索条件过滤设备树
+        filteredTree() {
+          if (!this.searchQuery) return this.deviceTree;
+          
+          const query = this.searchQuery.toLowerCase();
+          const filteredTree = JSON.parse(JSON.stringify(this.deviceTree));
+          
+          // 递归过滤函数
+          const filterFn = (node) => {
+            if (node.devices) {
+              node.devices = node.devices.filter(device => 
+                device.name.toLowerCase().includes(query)
+              );
+              return node.devices.length > 0;
+            }
+            
+            if (node.children) {
+              node.children = node.children.filter(filterFn);
+              return node.children.length > 0;
+            }
+            
+            return node.name.toLowerCase().includes(query);
+          };
+          
+          return filteredTree.filter(filterFn);
+        }
+      },
+      methods: {
+        // 切换节点展开状态
+        toggleNode(node) {
+          node.expanded = !node.expanded;
+        },
+        
+        // 展开所有节点
+        expandAll() {
+          this.deviceTree.forEach(area => {
+            area.expanded = true;
+            area.children.forEach(dept => {
+              dept.expanded = true;
+            });
+          });
+        },
+        
+        // 折叠所有节点
+        collapseAll() {
+          this.deviceTree.forEach(area => {
+            area.expanded = false;
+            area.children.forEach(dept => {
+              dept.expanded = false;
+            });
+          });
+        },
+        
+        // 获取设备图标
+        getDeviceIcon(type) {
+          const icons = {
+            server: 'fas fa-server device-icon',
+            workstation: 'fas fa-desktop device-icon',
+            printer: 'fas fa-print device-icon',
+            storage: 'fas fa-hdd device-icon',
+            network: 'fas fa-ethernet device-icon',
+            security: 'fas fa-shield-alt device-icon',
+            industrial: 'fas fa-cogs device-icon'
+          };
+          return icons[type] || 'fas fa-microchip device-icon';
+        },
+        
+        // 获取设备类型名称
+        getDeviceType(type) {
+          const types = {
+            server: '服务器',
+            workstation: '工作站',
+            printer: '打印设备',
+            storage: '存储设备',
+            network: '网络设备',
+            security: '安全设备',
+            industrial: '工业设备'
+          };
+          return types[type] || '设备';
+        },
+        
+        // 获取设备位置
+        getDeviceLocation(device) {
+          const dept = this.deviceTree.flatMap(a => a.children)
+            .find(d => d.devices.some(dv => dv.id === device.id));
+          const area = this.deviceTree.find(a => 
+            a.children.some(c => c.id === dept.id));
+          return `${dept.name} | ${area.name}`;
+        },
+        
+        // 移除设备
+        removeDevice(deviceId) {
+          this.selectedDevices = this.selectedDevices.filter(id => id !== deviceId);
+        },
+        
+        // 重置选择
+        resetSelection() {
+          this.selectedDevices = [];
+        },
+        
+        // 确认选择
+        confirmSelection() {
+          if (this.selectedDevices.length === 0) {
+            alert('请至少选择一个设备');
+            return;
+          }
+          
+          const deviceNames = this.selectedDevicesData.map(d => d.name).join(', ');
+          alert(`已成功选择 ${this.selectedDevices.length} 个设备:\n${deviceNames}`);
+        },
+        
+        // 搜索设备
+        searchDevices() {
+          // 搜索时展开所有节点
+          this.expandAll();
+        },
+        
+        // 高亮显示搜索匹配
+        highlightSearch(text) {
+          if (!this.searchQuery) return text;
+          
+          const regex = new RegExp(`(${this.searchQuery})`, 'gi');
+          return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+      },
+      mounted() {
+        // 初始化时展开所有节点
+        this.expandAll();
+      }
+    });
+  </script>
+</body>
+</html>
